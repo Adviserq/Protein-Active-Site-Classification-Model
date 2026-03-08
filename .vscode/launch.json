@@ -1,0 +1,54 @@
+// {
+//     "version": "0.2.0",
+//     "configurations": [
+//         {
+//             "name": "Debug read_mmCIFs runner",
+//             "type": "debugpy",
+//             "request": "launch",
+//             "program": "${workspaceFolder}/debug_run_read_mmCIFs.py",
+//             "console": "integratedTerminal",
+//             "justMyCode": false,
+//             "cwd": "${workspaceFolder}",
+//             "env": {
+//                 "PYTHONPATH": "${workspaceFolder}"
+//             }
+//         }
+//     ]
+// }
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+         {
+            "name": "Debug read_mmCIFs runner",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "models.train_residue_model",
+            "cwd": "${workspaceFolder}",
+            }
+        // },
+        // {
+        //     "name": "Debug read_mmCIFs file",
+        //     "type": "debugpy", // δηλωνει ποιος debugger engine θα χρησιμοποιηθει για την εκτελεση του προγραμματος
+        //     "request": "launch", // Καθοριζει την ενεργεια του debugger
+        //     "module": "scripts.read_mmCIFs",
+        //     "cwd": "${workspaceFolder}" // Start from ACT_SITE_PROTEIN_CLASSIFICATION_MODEL as root
+        // },
+        // {
+        //     "name": "Debug Main",
+        //     "type": "debugpy",
+        //     "program": "${workspaceFolder}/main.py", // Ποιο αρχειο py θα εκτελεστει ως entry point
+        //     "request": "launch",
+        //     "cwd": "${workspaceFolder}" //Το "cwd" ορίζει τον φάκελο από τον οποίο θα ξεκινήσει η εκτέλεση του προγράμματος.
+        // },
+        // {
+        //     "name": "Debug feature_extractor file",
+        //     "type": "debugpy", // δηλωνει ποιος debugger engine θα χρησιμοποιηθει για την εκτελεση του προγραμματος
+        //     "request": "launch", // Καθοριζει την ενεργεια του debugger
+        //     "module": "scripts.feature_extractor",
+        //     "cwd": "${workspaceFolder}" // Start from ACT_SITE_PROTEIN_CLASSIFICATION_MODEL as root
+        // },
+    ]
+}

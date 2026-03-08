@@ -1,0 +1,9 @@
+biopython
+keras
+matplotlib
+numpy
+pandas
+requests
+scikit-learn
+tensorflow
+tensorboard
