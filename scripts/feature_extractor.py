@@ -1,6 +1,5 @@
 import numpy as np
 from Bio.PDB import NeighborSearch
-from Bio.PDB.SASA import ShrakeRupley
 
 AA_LIST = [
     'ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE',
