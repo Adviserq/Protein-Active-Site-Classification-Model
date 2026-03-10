@@ -5,7 +5,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from scripts.extract_pdb_proteins import UniProtClient
 from scripts.build_residue_dataset import build_dataset
 from scripts.read_mmCIFs import download_mmCIFs
-from scripts.duplicates import clean_dublicates
 
 class ActiveSitePipeline:
     def __init__(self, 
@@ -80,9 +79,6 @@ def main():
         
         for future in as_completed(futures):
             print(future.result())
-
-    cleaned_csv = clean_dublicates()
-    cleaned_csv.to_csv('features_dataset.csv', index = False)
 
 if __name__ == "__main__":
     main()
