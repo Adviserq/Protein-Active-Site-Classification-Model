@@ -74,7 +74,6 @@ def train_model(model, X, y, weights):
         verbose=1)
     print("\nΤο μοντέλο εκπαιδεύτηκε και αποθηκεύτηκε!")
     model.save('protein_model_final.h5')
-
     return history
 
 
