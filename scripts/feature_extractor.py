@@ -9,9 +9,11 @@ AA_LIST = [
 
 AA_TO_INDEX = {aa:i for i,aa in enumerate(AA_LIST)}
 
-CHARGED = {'ASP','GLU','LYS','ARG','HIS'}
-POLAR = {'SER','THR','ASN','GLN','HIS'}
-HYDROPHOBIC = {'ALA','VAL','ILE','LEU','MET','PHE','TRP','PRO'}
+# CHARGED = {'ASP','GLU','LYS','ARG','HIS'}
+# POLAR = {'SER','THR','ASN','GLN','HIS'}
+# HYDROPHOBIC = {'ALA','VAL','ILE','LEU','MET','PHE','TRP','PRO'}
+
+_SASA_CACHE = {}
 
 
 def one_hot_amino_acid(resname):
@@ -21,13 +23,22 @@ def one_hot_amino_acid(resname):
     return vec
 
 
-def compute_protein_centroid(model):
-    coords = []
-    for chain in model:
-        for residue in chain:
-            if residue.has_id('CA'):
-                coords.append(residue['CA'].coord)
-    return np.mean(coords, axis=0)
+# def compute_protein_centroid(model):
+#     coords = []
+#     for chain in model:
+#         for residue in chain:
+#             if residue.has_id('CA'):
+#                 coords.append(residue['CA'].coord)
+#     return np.mean(coords, axis=0)
+
+
+def get_residue_sasa(model, residue):
+    model_id = id(model)
+    if model_id not in _SASA_CACHE:
+        sr = ShrakeRupley()
+        sr.compute(model, level='R')
+        _SASA_CACHE[model_id] = True
+    return float(getattr(residue, 'sasa', 0.0))
 
 
 def extract_residue_features(model, chain, residue, radius=8.0):
@@ -49,9 +60,9 @@ def extract_residue_features(model, chain, residue, radius=8.0):
     neighbors = ns.search(central_ca.coord, radius)
 
     distances = []
-    charged = 0
-    polar = 0
-    hydrophobic = 0
+    # charged = 0
+    # polar = 0
+    # hydrophobic = 0
 
     for atom in neighbors:
         res, ch = residue_map[atom]
@@ -59,30 +70,29 @@ def extract_residue_features(model, chain, residue, radius=8.0):
             continue
         dist = np.linalg.norm(atom.coord - central_ca.coord)
         distances.append(dist)
-        if res.resname in CHARGED:
-            charged += 1
-        if res.resname in POLAR:
-            polar += 1
-        if res.resname in HYDROPHOBIC:
-            hydrophobic += 1
+        # if res.resname in CHARGED:
+        #     charged += 1
+        # if res.resname in POLAR:
+        #     polar += 1
+        # if res.resname in HYDROPHOBIC:
+        #     hydrophobic += 1
 
     total_neighbors = len(distances)
     mean_dist = np.mean(distances) if distances else 0.0
-    std_dist = np.std(distances) if distances else 0.0
+    # std_dist = np.std(distances) if distances else 0.0
 
-    centroid = compute_protein_centroid(model)
-    dist_from_centroid = np.linalg.norm(central_ca.coord - centroid)
+    # Disabled on request:
+    # centroid = compute_protein_centroid(model)
+    # dist_from_centroid = np.linalg.norm(central_ca.coord - centroid)
+
+    sasa = get_residue_sasa(model, residue)
 
     one_hot = one_hot_amino_acid(residue.resname)
 
     numeric_features = np.array([
         total_neighbors,
         mean_dist,
-        std_dist,
-        charged,
-        polar,
-        hydrophobic,
-        dist_from_centroid
+        sasa
     ])
 
     return np.concatenate([one_hot, numeric_features])

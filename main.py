@@ -1,15 +1,17 @@
 import os
 import shutil
+import pandas as pd
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from scripts.extract_pdb_proteins import UniProtClient
 from scripts.build_residue_dataset import build_dataset
 from scripts.read_mmCIFs import download_mmCIFs
+from scripts.duplicates import clean_dublicates
 
 class ActiveSitePipeline:
     def __init__(self, 
                  resolution_cutoff: float = 2.0,
                  temp_pdb_dir: str = "data/temp_pdb",
-                 output_csv: str = "data/preprocessed/final_dataset.csv"):
+                 output_csv: str = "data/preprocessed/features_dataset.csv"):
         
         self.resolution = resolution_cutoff
         self.temp_pdb_dir = temp_pdb_dir
@@ -78,6 +80,9 @@ def main():
         
         for future in as_completed(futures):
             print(future.result())
+
+    cleaned_csv = clean_dublicates()
+    cleaned_csv.to_csv('features_dataset.csv', index = False)
 
 if __name__ == "__main__":
     main()
