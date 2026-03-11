@@ -16,6 +16,7 @@ cnn_env/
 *.log
 *.cif
 *.h5
+*.txt
 protein_model_final*.h5
 training_history.csv
 training_history_overfit.csv
