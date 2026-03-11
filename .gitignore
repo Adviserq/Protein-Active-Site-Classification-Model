@@ -14,7 +14,7 @@ cnn_env/
 .ruff_cache/
 
 *.log
-
+*.cif
 *.h5
 protein_model_final*.h5
 training_history.csv
