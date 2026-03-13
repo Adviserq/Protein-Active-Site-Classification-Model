@@ -8,6 +8,7 @@ venv/
 ENV/
 env/
 cnn_env/
+model_cnn/
 
 .pytest_cache/
 .mypy_cache/
