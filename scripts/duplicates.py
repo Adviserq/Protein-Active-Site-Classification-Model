@@ -1,8 +1,7 @@
 import pandas as pd
 
-file_path = r'C:\Main Directory\ACT_SITE_PROTEIN_CLASSIFICATION_MODEL\data\preprocessed\features_dataset.csv'
 
-def clean_dublicates():
+def clean_dublicates(file_path):
     df = pd.read_csv(file_path)
     print(f'Lines before removal of duplicates: {len(df)}')
 
