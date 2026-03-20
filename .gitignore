@@ -31,3 +31,4 @@ data/preprocessed/final_dataset.csv
 assets
 models/trained_models
 test/output/
+test_folder
