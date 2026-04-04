@@ -27,11 +27,10 @@ The training script then scales the numeric features, applies class weighting, t
 .
 ├── main.py                          # End-to-end dataset generation pipeline
 ├── models/
-│   ├── keras_model.py
 │   └── train_residue_model.py       # Model training + TensorBoard logging
 ├── scripts/
 │   ├── build_residue_dataset.py     # Converts mmCIF files into residue-level rows
-│   ├── extract_pdb_proteins.py      # UniProt queries and PDB selection
+│   ├── extract_pdb_proteins.py      # UniProt queries for protein selection
 │   ├── feature_extractor.py         # Structural feature extraction
 │   └── read_mmCIFs.py               # mmCIF download helpers
 ├── data/
@@ -65,8 +64,7 @@ It creates an `ActiveSitePipeline` that:
 - amino-acid identity encoded as one-hot values
 - number of neighboring residues inside a radius
 - mean and standard deviation of neighbor distances
-- counts of charged, polar, and hydrophobic neighbors
-- distance from the protein centroid
+- Numerical value that represents the measurement of the surface accessibility for each amino acid residue using the SharkRupley algorithm
 
 ### Model Training
 
@@ -200,15 +198,6 @@ tensorboard --logdir logs/fit
 - Several scripts in `test/` look like debugging or exploratory files rather than automated tests.
 - Existing model artifacts and CSV histories are ignored by Git through `.gitignore`.
 - TensorBoard logs are also ignored by Git under `logs/`.
-
-## Next Improvements
-
-Reasonable next steps for the project:
-
-1. Unify dataset file naming so generation and training use the same CSV by default.
-2. Add evaluation metrics on the held-out test set after training.
-3. Save the fitted scaler together with the trained model.
-4. Replace exploratory `test/` scripts with reproducible unit or integration tests.
 
 ## License
 
