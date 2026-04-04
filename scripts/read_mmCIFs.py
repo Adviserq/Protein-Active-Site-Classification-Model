@@ -9,11 +9,6 @@ except Exception:
 
 output_dir = r'C:\Main Directory\ACT_SITE_PROTEIN_CLASSIFICATION_MODEL\data\raw\pdb'
 
-# residue-centric helpers are available in the scripts package.  Importing
-# them here is not required by the download logic but provides a convenient
-# place to remind users of the extended functionality.
-# from scripts.build_residue_dataset import build_dataset
-
 
 def get_pdb_entries(extractor, size: int = 100) -> list[dict]:
     '''
