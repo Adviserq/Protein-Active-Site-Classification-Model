@@ -18,7 +18,7 @@ class ActiveSitePipeline:
         self.output_csv = output_csv
         
         os.makedirs(self.temp_pdb_dir, exist_ok=True)
-        # Διαγραφή παλιού αρχείου αν υπάρχει για να ξεκινήσει φρέσκο write
+        # Διαγραφή παλιού αρχείου αν υπάρχει
         if os.path.exists(self.output_csv):
             os.remove(self.output_csv)
             
@@ -32,7 +32,7 @@ class ActiveSitePipeline:
         return min(valid_pdbs, key=lambda x: x['resolution'])['pdb_id']
 
     def process_accession(self, accession):
-        """Η κύρια μονάδα εργασίας για κάθε νήμα."""
+        """Η κύρια μονάδα εργασίας για κάθε thread."""
         # Δημιουργία μοναδικού temp φακέλου για το thread για αποφυγή conflicts
         thread_dir = os.path.join(self.temp_pdb_dir, accession)
         os.makedirs(thread_dir, exist_ok=True)
@@ -40,6 +40,12 @@ class ActiveSitePipeline:
         try:
             # 1. Fetch Metadata
             protein_data = self.uniprot_client.get_active_sites_and_pdbs(accession, self.resolution)
+
+            if protein_data.get('skipped'):
+                shutil.rmtree(thread_dir)
+                return (f"SKIP: {accession} — mutagenesis overlaps active site "
+                        f"at position {protein_data.get('conflict_pos')}")
+
             best_pdb_id = self.get_best_pdb_id(protein_data.get('pdbs', []))
             
             if not best_pdb_id:
@@ -81,10 +87,8 @@ def main():
         for future in as_completed(futures):
             print(future.result())
 
-    if os.path.exists(pipeline.output_csv):
-        cleaned_df = clean_dublicates(pipeline.output_csv)
-        cleaned_df.to_csv(pipeline.output_csv, index=False)
-        print(f"[*] Dataset deduplicated and saved to: {pipeline.output_csv}")
+    cleaned_dataframe = clean_dublicates(file_path = pipeline.output_csv)
+    cleaned_dataframe.to_csv(pipeline.output_csv, index = False)
 
 if __name__ == "__main__":
     main()

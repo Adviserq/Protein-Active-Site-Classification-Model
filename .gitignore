@@ -14,8 +14,9 @@ cnn_env/
 .ruff_cache/
 
 *.log
-
+*.cif
 *.h5
+*.txt
 protein_model_final*.h5
 training_history.csv
 training_history_overfit.csv
@@ -27,4 +28,7 @@ data/temp_pdb/
 data/tensors/
 data/preprocessed/final_dataset.csv
 
+assets
+models/trained_models
 test/output/
+test_folder

@@ -24,7 +24,6 @@ class UniProtClient:
             'fields': 'accession'
         }
 
-        start_time = perf_counter()
         next_url = None
         while True:
             if next_url:
@@ -60,7 +59,6 @@ class UniProtClient:
 
             if not next_url:
                 break
-        end_time = perf_counter()
         result = accessions[:size]
         random.shuffle(result)
         return result
@@ -90,11 +88,12 @@ class UniProtClient:
                         pos = None
                 description_field = feature.get('description', '') or ''
                 act_sites.append({'Active Site Pos': pos, 'Active Site Desc': description_field})
-            if 'mutagenesis' in ftype or 'mutagen' in ftype:
+            if 'mutagenesis' in ftype or 'mutagen' in ftype or 'Mutagenesis' in ftype:
                 loc = feature.get('location') or {}
                 start = loc.get('start') or {}
                 mpos = start.get('value') if isinstance(start, Dict) else None
                 mutagenesis.append({'pos': mpos, 'description': feature.get('description')})
+                # mutagenesis.append({'pos': 136, 'description': 'some desc'})
 
         # PDB xrefs
         xrefs = data.get('uniProtKBCrossReferences') or []
@@ -130,6 +129,24 @@ class UniProtClient:
                     pdb_xrefs.append(pdb_entry)
 
         pdb_xrefs = [p for p in pdb_xrefs if p and p.get('pdb_id')]
+
+        # Check if mutagenesis positions align with active site
+        conflict_pos = None
+        for i in range(len(mutagenesis)):
+            for j in range(len(act_sites)):
+                if act_sites[j].get('Active Site Pos') == mutagenesis[i].get('pos'):
+                    conflict_pos = mutagenesis[i].get('pos')
+                    break
+            if conflict_pos is not None:
+                break
+
+        if conflict_pos is not None:
+            return {
+                'skipped': True,
+                'accession': accession,
+                'reason': 'mutagenesis_overlap',
+                'conflict_pos': conflict_pos,
+            }
         return {'active_sites': act_sites, 'pdbs': pdb_xrefs, 'mutagenesis': mutagenesis}
 
 
@@ -142,6 +159,6 @@ if __name__ == '__main__':
         # print('Sample accessions:', sample)
         if sample:
             # print('Fetching details for', sample[0])
-            print(client.get_active_sites_and_pdbs('P00519'))
+            print(client.get_active_sites_and_pdbs('O00444'))
     except Exception as e:
         print(e)
