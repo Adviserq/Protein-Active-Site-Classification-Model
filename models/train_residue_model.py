@@ -19,11 +19,9 @@ os.makedirs(log_dir, exist_ok=True)
 
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
-file_name = r'C:\Main Directory\ACT_SITE_PROTEIN_CLASSIFICATION_MODEL\data\preprocessed\features_dataset.csv'
+file_name = r'data\preprocessed\features_dataset.csv'
 data = pd.read_csv(file_name)
-# Traning dataset: Συνολο δεδομενων που χρησιμοποιειται για την εκπαιδευση του μοντελου / αξιοποιειται για την προσαρμογη του μοντελου / Το μοντελο τα βλεπει, μαθαινει απο αυτα και αναπροσαρμοζει τις παραμετρους του
-# Test set: Υποσυνολο του training dataset (το μοντελο δεν εχει δει το υποσυνολο αυτο), το οποιο χρησιμοποιειται για την τελικη αξιολογηση αποδοσης του μοντελου / Σκοπος ειναι να παρεχει μια αμεροληπτη εκτιμηση ικανοτητας γενικευσης σε νεα αγνωστα δεδομενα
-# Γιατι χωρις stratify μπορει η αναλογια των labels στο τεστ σετ να αλλαξει? Διοτι το split γινεται τυχαια σε επιπεδο δειγματων και οχι label/κατηγοριων
+
 X = data.drop(labels = [
     'pdb_id',
     'chain',
@@ -66,7 +64,7 @@ early_stopping = EarlyStopping(
     monitor='val_pr_auc',    # Παρακολουθεί το PR-AUC του validation set
     patience=10,             # Υπομονή: αν για 10 epochs δεν δούμε βελτίωση, σταμάτα
     mode='max',              # Επειδή θέλουμε το ΜΕΓΙΣΤΟ PR-AUC
-    restore_best_weights=True # ΠΟΛΥ ΣΗΜΑΝΤΙΚΟ: Επαναφέρει τα βάρη του καλύτερου epoch
+    restore_best_weights=True 
 )
 
 tensorboard_callback = tf.keras.callbacks.TensorBoard(
@@ -148,7 +146,7 @@ print(
     f"f1={best_threshold_stats['f1']:.4f}"
 )
 
-# Αποθήκευση threshold για χρήση στο predict.py
+
 threshold_path = os.path.join(
     r'models/trained_models',
     f"threshold{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.txt"
