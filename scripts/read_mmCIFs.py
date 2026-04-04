@@ -1,13 +1,8 @@
-import os
-
 from Bio.PDB import PDBList
-try:
-    from Bio.PDB.MMCIFParser import MMCIFParser
-except Exception:
-    MMCIFParser = None
-
-
-output_dir = r'C:\Main Directory\ACT_SITE_PROTEIN_CLASSIFICATION_MODEL\data\raw\pdb'
+# try:
+#     from Bio.PDB.MMCIFParser import MMCIFParser
+# except Exception:
+#     MMCIFParser = None
 
 
 def get_pdb_entries(extractor, size: int = 100) -> list[dict]:
@@ -47,14 +42,14 @@ def get_pdb_entries(extractor, size: int = 100) -> list[dict]:
     return entries
 
 
-def download_mmCIFs(entries, output_directory: str = None):
+def download_mmCIFs(entries, output_directory: str):
     '''
     Download mmCIF files for given `entries` list produced by
     `get_pdb_entries`.
     '''
-    if output_directory is None:
-        output_directory = output_dir
-
+    if output_directory is None or output_directory.strip() == '':
+        raise ValueError('An output directory is required')
+    
     pdb_obj = PDBList()
     for element in entries:
         if not element or not isinstance(element, dict):
