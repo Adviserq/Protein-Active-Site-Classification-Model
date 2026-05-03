@@ -7,3 +7,4 @@ requests
 scikit-learn
 tensorflow
 tensorboard
+tqdm

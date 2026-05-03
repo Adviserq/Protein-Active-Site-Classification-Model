@@ -1,8 +1,6 @@
+import os
+import requests
 from Bio.PDB import PDBList
-# try:
-#     from Bio.PDB.MMCIFParser import MMCIFParser
-# except Exception:
-#     MMCIFParser = None
 
 
 def get_pdb_entries(extractor, size: int = 100) -> list[dict]:
@@ -42,27 +40,47 @@ def get_pdb_entries(extractor, size: int = 100) -> list[dict]:
     return entries
 
 
-def download_mmCIFs(entries, output_directory: str):
+RCSB_MMCIF_URL = "https://files.rcsb.org/download/{pdb_id}.cif"
+
+
+def _download_single(pdb_id: str, output_directory: str) -> None:
+    dest = os.path.join(output_directory, f"{pdb_id.lower()}.cif")
+    if os.path.exists(dest):
+        return  # already downloaded, skip
+    url = RCSB_MMCIF_URL.format(pdb_id=pdb_id.upper())
+    r = requests.get(url, timeout=60, stream=True)
+    r.raise_for_status()
+    with open(dest, 'wb') as f:
+        for chunk in r.iter_content(chunk_size=1 << 16):
+            f.write(chunk)
+
+
+def download_mmCIFs(entries, output_directory: str, method: str = "BioPython"):
     '''
     Download mmCIF files for given `entries` list produced by
     `get_pdb_entries`.
     '''
     if output_directory is None or output_directory.strip() == '':
         raise ValueError('An output directory is required')
-    
-    pdb_obj = PDBList()
+
     for element in entries:
         if not element or not isinstance(element, dict):
             continue
         pdb_ids = element.get('pdbs', [])
         for pdb in pdb_ids:
             try:
-                pdb_obj.retrieve_pdb_file(
-                    pdb_code=pdb,
-                    pdir=output_directory,
-                    file_format='mmCif',
-                    overwrite=True
-                )
+                if method == "HTTP":
+                    _download_single(pdb, output_directory)
+                elif method == "BioPython":
+                    pdb_obj = PDBList()
+                    pdb_obj.retrieve_pdb_file(
+                        pdb_code=pdb,
+                        pdir=output_directory,
+                        file_format='mmCif',
+                        overwrite=True
+                    )
+                else:
+                    raise ValueError(f"Unknown download method: {method}")
                 print(f'Downloaded {pdb}')
             except Exception as e:
                 print(f"Error downloading {pdb}: {e}")
