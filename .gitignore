@@ -17,10 +17,10 @@ cnn_env/
 *.cif
 *.h5
 *.txt
+.claude
 protein_model_final*.h5
 training_history.csv
 training_history_overfit.csv
-logs/
 
 data/preprocessed
 data/raw/pdb/
