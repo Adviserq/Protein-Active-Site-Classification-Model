@@ -9,9 +9,9 @@ AA_LIST = [
 
 AA_TO_INDEX = {aa:i for i,aa in enumerate(AA_LIST)}
 
-# CHARGED = {'ASP','GLU','LYS','ARG','HIS'}
-# POLAR = {'SER','THR','ASN','GLN','HIS'}
-# HYDROPHOBIC = {'ALA','VAL','ILE','LEU','MET','PHE','TRP','PRO'}
+CHARGED = {'ASP','GLU','LYS','ARG','HIS'}
+POLAR = {'SER','THR','ASN','GLN','HIS'}
+HYDROPHOBIC = {'ALA','VAL','ILE','LEU','MET','PHE','TRP','PRO'}
 
 _SASA_CACHE = {}
 
@@ -60,9 +60,9 @@ def extract_residue_features(model, chain, residue, radius=8.0):
     neighbors = ns.search(central_ca.coord, radius)
 
     distances = []
-    # charged = 0
-    # polar = 0
-    # hydrophobic = 0
+    charged = 0
+    polar = 0
+    hydrophobic = 0
 
     for atom in neighbors:
         res, ch = residue_map[atom]
@@ -70,12 +70,12 @@ def extract_residue_features(model, chain, residue, radius=8.0):
             continue
         dist = np.linalg.norm(atom.coord - central_ca.coord)
         distances.append(dist)
-        # if res.resname in CHARGED:
-        #     charged += 1
-        # if res.resname in POLAR:
-        #     polar += 1
-        # if res.resname in HYDROPHOBIC:
-        #     hydrophobic += 1
+        if res.resname in CHARGED:
+            charged += 1
+        if res.resname in POLAR:
+            polar += 1
+        if res.resname in HYDROPHOBIC:
+            hydrophobic += 1
 
     total_neighbors = len(distances)
     mean_dist = np.mean(distances) if distances else 0.0
