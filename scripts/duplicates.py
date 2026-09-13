@@ -18,6 +18,3 @@ def view_class_labels(file_path: str):
     class_labels = df['label'].value_counts()
     # print(class_labels)
     return class_labels
-
-test = view_class_labels(r'data\preprocessed\features_dataset.csv')
-print(test)

@@ -36,6 +36,12 @@ def _latest_file(directory: str, pattern: str) -> str | None:
     return matches[0] if matches else None
 
 
+def _resolve_path(file_path: str) -> str:
+    """Μετατρέπει relative paths και Windows separators σε έγκυρο path του OS."""
+    normalized = file_path.replace('\\', os.sep)
+    return os.path.abspath(normalized)
+
+
 def infer_pdb_id_from_path(file_path: str) -> str | None:
     stem = os.path.splitext(os.path.basename(file_path))[0].upper()
     if len(stem) >= 4 and stem[:4].isalnum():
@@ -154,7 +160,17 @@ def extract_all_features(structure) -> list[dict]:
 
 def predict(records: list[dict], model, scaler, threshold: float, sifts_entries: list[dict] | None = None) -> pd.DataFrame:
     X = np.array([r['features'] for r in records])
-    X_scaled = scaler.transform(X)
+    feature_names = getattr(scaler, 'feature_names_in_', None)
+    if feature_names is not None:
+        if X.shape[1] != len(feature_names):
+            raise ValueError(
+                f'Feature mismatch: model expects {len(feature_names)} features, '
+                f'but prediction produced {X.shape[1]}.'
+            )
+        X_for_scaler = pd.DataFrame(X, columns=feature_names)
+    else:
+        X_for_scaler = X
+    X_scaled = scaler.transform(X_for_scaler)
     probs = model.predict(X_scaled, verbose=0).ravel()
 
     rows = []
@@ -206,18 +222,22 @@ def main():
                         help='Αποθήκευση αποτελεσμάτων σε CSV (προαιρετικό)')
     args = parser.parse_args()
 
+    input_path = _resolve_path(args.input)
+    model_arg = _resolve_path(args.model) if args.model else None
+    scaler_arg = _resolve_path(args.scaler) if args.scaler else None
+
     trained_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 'models', 'trained_models')
 
     # ── Φόρτωση μοντέλου ──
-    model_path = args.model or _latest_file(trained_dir, 'trained_model*.h5')
+    model_path = model_arg or _latest_file(trained_dir, 'trained_model*.h5')
     if not model_path or not os.path.exists(model_path):
         sys.exit('[ERROR] Δεν βρέθηκε trained model. Τρέξε πρώτα train_residue_model.py.')
     print(f'[*] Model: {model_path}')
     nn_model = load_model(model_path, compile=False)
 
     # ── Φόρτωση scaler ──
-    scaler_path = args.scaler or _latest_file(trained_dir, 'scaler*.pkl')
+    scaler_path = scaler_arg or _latest_file(trained_dir, 'scaler*.pkl')
     if not scaler_path or not os.path.exists(scaler_path):
         sys.exit('[ERROR] Δεν βρέθηκε scaler. Τρέξε ξανά train_residue_model.py (αποθηκεύει scaler).')
     print(f'[*] Scaler: {scaler_path}')
@@ -236,8 +256,10 @@ def main():
     print(f'[*] Threshold: {threshold}')
 
     # ── Φόρτωση δομής & εξαγωγή features ──
-    print(f'[*] Φόρτωση δομής: {args.input}')
-    structure = load_structure(args.input)
+    print(f'[*] Φόρτωση δομής: {input_path}')
+    if not os.path.exists(input_path):
+        sys.exit(f'[ERROR] Δεν βρέθηκε input structure: {input_path}')
+    structure = load_structure(input_path)
     print('[*] Εξαγωγή features...')
     records = extract_all_features(structure)
     if not records:
@@ -247,7 +269,7 @@ def main():
     # ── SIFTS mapping (PDB -> UniProt) ──
     sifts_entries = None
     if not args.no_sifts:
-        pdb_id = args.pdb_id or infer_pdb_id_from_path(args.input)
+        pdb_id = args.pdb_id or infer_pdb_id_from_path(input_path)
         if pdb_id:
             print(f'[*] SIFTS mapping για PDB: {pdb_id}')
             sifts_entries = build_sifts_lookup(pdb_id)

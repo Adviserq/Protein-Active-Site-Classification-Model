@@ -25,7 +25,7 @@ os.makedirs(log_dir, exist_ok=True)
 
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
-file_name = r'data\preprocessed\features_dataset.csv'
+file_name = 'data/preprocessed/features_dataset_wcn.csv'
 data = pd.read_csv(file_name)
 
 X = data.drop(labels = [
@@ -105,6 +105,7 @@ def focal_loss(gamma=2.0, alpha=0.75):
 
 # V3.1
 model = Sequential()
+# Η είσοδος παραμένει δυναμική και προσαρμόζεται αυτόματα στα 24 features.
 model.add(Input(shape = (X_train_scaled.shape[1],)))
 model.add(Dense(units = 128, use_bias = False))
 model.add(BatchNormalization())
@@ -134,7 +135,7 @@ model.compile(
 early_stopping = EarlyStopping(
     monitor='val_pr_auc',    # Παρακολουθεί το PR-AUC του validation set
     patience=10,             # Υπομονή: αν για 10 epochs δεν δούμε βελτίωση, σταμάτα
-    mode='max',              # Επειδή θέλουμε το ΜΕΓΙΣΤΟ PR-AUC
+    mode='max',              
     restore_best_weights=True 
 )
 
@@ -228,4 +229,3 @@ threshold_path = os.path.join(
 with open(threshold_path, 'w') as _f:
     _f.write(str(best_threshold_stats['threshold']))
 print(f"Threshold αποθηκεύτηκε: {threshold_path}")
-

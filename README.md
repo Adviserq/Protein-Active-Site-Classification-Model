@@ -62,9 +62,13 @@ It creates an `ActiveSitePipeline` that:
 [scripts/feature_extractor.py](scripts/feature_extractor.py) generates residue-centered features such as:
 
 - amino-acid identity encoded as one-hot values
-- number of neighboring residues inside a radius
-- mean and standard deviation of neighbor distances
+- whole-model weighted contact number (WCN)
+- mean neighbor distance and sidechain orientation angle
 - Numerical value that represents the measurement of the surface accessibility for each amino acid residue using the SharkRupley algorithm
+
+The feature vector contains 24 values (20 one-hot residue types and 4 numeric features:
+`wcn`, `mean_dist`, `sasa`, and `sidechain_orientation_angle`). The training model uses
+`X_train_scaled.shape[1]` for its input shape, so this feature-count change is handled dynamically.
 
 ### Model Training
 
