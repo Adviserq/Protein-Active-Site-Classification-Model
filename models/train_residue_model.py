@@ -8,7 +8,7 @@ from keras.callbacks import EarlyStopping
 import os
 import datetime
 import joblib
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GroupShuffleSplit
 from sklearn.preprocessing import StandardScaler
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.metrics import (precision_score, 
@@ -37,9 +37,26 @@ X = data.drop(labels = [
 ], axis = 1)
 Y = data['label']
 
-x_train, x_test, y_train, y_test = train_test_split(
-    X, Y, train_size = 0.80, test_size = 0.20, random_state = 42, stratify = Y # Το training set + test set θα εχει την ιδια αναλογια κατηγοριων/label (0/1) με το αρχικο σετ δεδομενων
-)
+groups = data['pdb_id']
+
+gss = GroupShuffleSplit(n_splits=1, train_size=0.8, random_state=42)
+train_idx, test_idx = next(gss.split(X, Y, groups=groups))
+
+x_train, x_test = X.iloc[train_idx], X.iloc[test_idx]
+y_train, y_test = Y.iloc[train_idx], Y.iloc[test_idx]
+
+train_proteins = set(groups.iloc[train_idx])
+test_proteins = set(groups.iloc[test_idx])
+
+overlap = train_proteins & test_proteins
+print(f"Πρωτεΐνες σε train: {len(train_proteins)} | test: {len(test_proteins)} | επικάλυψη: {len(overlap)}")
+assert len(overlap) == 0, "Data leakage: κοινές πρωτεΐνες σε train και test set!"
+
+print(f"Αναλογία θετικής κλάσης — train: {y_train.mean():.4f} | test: {y_test.mean():.4f}")
+
+# x_train, x_test, y_train, y_test = train_test_split(
+#     X, Y, train_size = 0.80, test_size = 0.20, random_state = 42, stratify = Y # Το training set + test set θα εχει την ιδια αναλογια κατηγοριων/label (0/1) με το αρχικο σετ δεδομενων
+# )
 
 # Bringing features to similar scale / x'= (x-mean_of_column)/std_of_column
 scaler = StandardScaler()
