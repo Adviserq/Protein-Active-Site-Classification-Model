@@ -32,3 +32,17 @@ assets
 models/trained_models
 test/output/
 test_folder
+
+thesis_context/
+/*.png
+/update_chimerax_slide.py
+/update_evaluation_slide.py
+/update_imbalanced_slide.py
+/update_proteins_slide.py
+/add_imbalanced_slide.py
+/create_presentation.py
+/dna_helix_animation.py
+models/aa_pca.npz
+PITCH PRESENTATION PAPER THESIS.pptx
+dna_helix.gif
+create_methodology_doc.py

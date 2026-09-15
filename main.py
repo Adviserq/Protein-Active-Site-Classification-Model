@@ -5,7 +5,7 @@ from tqdm import tqdm
 from scripts.extract_pdb_proteins import UniProtClient
 from scripts.build_residue_dataset import build_dataset
 from scripts.read_mmCIFs import download_mmCIFs
-from scripts.duplicates import clean_dublicates
+from scripts.duplicates import clean_dublicates, view_class_labels
 
 class ActiveSitePipeline:
     def __init__(self, 
@@ -109,6 +109,7 @@ def main():
 
     cleaned_dataframe = clean_dublicates(file_path = pipeline.output_csv)
     cleaned_dataframe.to_csv(pipeline.output_csv, index = False)
+    view_class_labels(file_path = pipeline.output_csv)
 
 if __name__ == "__main__":
     main()
