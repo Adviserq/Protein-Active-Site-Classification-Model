@@ -21,7 +21,6 @@ cnn_env/
 protein_model_final*.h5
 training_history.csv
 training_history_overfit.csv
-training_results_notes.md
 
 data/preprocessed
 data/raw/pdb/
