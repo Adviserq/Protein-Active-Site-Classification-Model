@@ -3,7 +3,7 @@ predict.py — Πρόβλεψη ενεργού κέντρου σε άγνωστ�
 
 Χρήση:
     python predict.py --input path/to/protein.cif
-    python predict.py --input path/to/protein.cif --model models/trained_models/trained_modelXXXX.h5 --scaler models/trained_models/scalerXXXX.pkl --threshold 0.92
+    python predict.py --input path/to/protein.cif --model models/trained_models/trained_modelXXXX.h5 --scaler models/scalers/scalerXXXX.pkl --threshold 0.92
     python predict.py --input path/to/protein.cif --top 10   # εμφάνισε μόνο top-10 πιο πιθανά residues
 
 Αν δεν συμπληρωθούν --model / --scaler / --threshold, διαλέγεται αυτόματα το πιο πρόσφατο αρχείο
@@ -226,18 +226,22 @@ def main():
     model_arg = _resolve_path(args.model) if args.model else None
     scaler_arg = _resolve_path(args.scaler) if args.scaler else None
 
-    trained_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                'models', 'trained_models')
+    models_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              'models', 'trained_models')
+    scalers_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               'models', 'scalers')
+    thresholds_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                  'models', 'thresholds')
 
     # ── Φόρτωση μοντέλου ──
-    model_path = model_arg or _latest_file(trained_dir, 'trained_model*.h5')
+    model_path = model_arg or _latest_file(models_dir, 'trained_model*.h5')
     if not model_path or not os.path.exists(model_path):
         sys.exit('[ERROR] Δεν βρέθηκε trained model. Τρέξε πρώτα train_residue_model.py.')
     print(f'[*] Model: {model_path}')
     nn_model = load_model(model_path, compile=False)
 
     # ── Φόρτωση scaler ──
-    scaler_path = scaler_arg or _latest_file(trained_dir, 'scaler*.pkl')
+    scaler_path = scaler_arg or _latest_file(scalers_dir, 'scaler*.pkl')
     if not scaler_path or not os.path.exists(scaler_path):
         sys.exit('[ERROR] Δεν βρέθηκε scaler. Τρέξε ξανά train_residue_model.py (αποθηκεύει scaler).')
     print(f'[*] Scaler: {scaler_path}')
@@ -247,7 +251,7 @@ def main():
     if args.threshold is not None:
         threshold = args.threshold
     else:
-        thresh_file = _latest_file(trained_dir, 'threshold*.txt')
+        thresh_file = _latest_file(thresholds_dir, 'threshold*.txt')
         if thresh_file and os.path.exists(thresh_file):
             with open(thresh_file) as f:
                 threshold = float(f.read().strip())

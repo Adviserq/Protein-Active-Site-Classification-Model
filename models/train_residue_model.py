@@ -39,20 +39,51 @@ Y = data['label']
 
 groups = data['pdb_id']
 
-gss = GroupShuffleSplit(n_splits=1, train_size=0.8, random_state=42)
-train_idx, test_idx = next(gss.split(X, Y, groups=groups))
+outer_gss = GroupShuffleSplit(n_splits=1, train_size=0.8, random_state=42)
+train_val_idx, test_idx = next(outer_gss.split(X, Y, groups=groups))
 
-x_train, x_test = X.iloc[train_idx], X.iloc[test_idx]
-y_train, y_test = Y.iloc[train_idx], Y.iloc[test_idx]
+inner_gss = GroupShuffleSplit(n_splits=1, train_size=0.9, random_state=43)
+train_relative_idx, validation_relative_idx = next(
+    inner_gss.split(
+        X.iloc[train_val_idx],
+        Y.iloc[train_val_idx],
+        groups=groups.iloc[train_val_idx]
+    )
+)
+train_idx = train_val_idx[train_relative_idx]
+validation_idx = train_val_idx[validation_relative_idx]
+
+x_train = X.iloc[train_idx]
+x_validation = X.iloc[validation_idx]
+x_test = X.iloc[test_idx]
+y_train = Y.iloc[train_idx]
+y_validation = Y.iloc[validation_idx]
+y_test = Y.iloc[test_idx]
 
 train_proteins = set(groups.iloc[train_idx])
+validation_proteins = set(groups.iloc[validation_idx])
 test_proteins = set(groups.iloc[test_idx])
 
-overlap = train_proteins & test_proteins
-print(f"Πρωτεΐνες σε train: {len(train_proteins)} | test: {len(test_proteins)} | επικάλυψη: {len(overlap)}")
-assert len(overlap) == 0, "Data leakage: κοινές πρωτεΐνες σε train και test set!"
+train_validation_overlap = train_proteins & validation_proteins
+train_test_overlap = train_proteins & test_proteins
+validation_test_overlap = validation_proteins & test_proteins
+print(
+    f"Πρωτεΐνες σε train: {len(train_proteins)} | "
+    f"validation: {len(validation_proteins)} | test: {len(test_proteins)}"
+)
+print(
+    f"Επικαλύψεις train/validation: {len(train_validation_overlap)} | "
+    f"train/test: {len(train_test_overlap)} | "
+    f"validation/test: {len(validation_test_overlap)}"
+)
+assert not train_validation_overlap, "Data leakage: κοινές πρωτεΐνες σε train και validation set!"
+assert not train_test_overlap, "Data leakage: κοινές πρωτεΐνες σε train και test set!"
+assert not validation_test_overlap, "Data leakage: κοινές πρωτεΐνες σε validation και test set!"
 
-print(f"Αναλογία θετικής κλάσης — train: {y_train.mean():.4f} | test: {y_test.mean():.4f}")
+print(
+    f"Αναλογία θετικής κλάσης — train: {y_train.mean():.4f} | "
+    f"validation: {y_validation.mean():.4f} | test: {y_test.mean():.4f}"
+)
 
 # x_train, x_test, y_train, y_test = train_test_split(
 #     X, Y, train_size = 0.80, test_size = 0.20, random_state = 42, stratify = Y # Το training set + test set θα εχει την ιδια αναλογια κατηγοριων/label (0/1) με το αρχικο σετ δεδομενων
@@ -61,6 +92,7 @@ print(f"Αναλογία θετικής κλάσης — train: {y_train.mean():
 # Bringing features to similar scale / x'= (x-mean_of_column)/std_of_column
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(x_train)
+X_validation_scaled = scaler.transform(x_validation)
 X_test_scaled = scaler.transform(x_test)
 # print(X_train_scaled.shape[1])
 
@@ -70,7 +102,10 @@ class_weight_dict = dict(zip(classes, weights))
 # print(f"Calculated Weights: {class_weight_dict}")
 
 smote = SMOTE(random_state=42)
-X_train_scaled, y_train = smote.fit_resample(X_train_scaled, y_train)
+X_train_resampled, y_train_resampled = smote.fit_resample(
+    X_train_scaled,
+    y_train
+)
 
 def focal_loss(gamma=2.0, alpha=0.75):
     # gamma: πόσο down-weighting στα εύκολα δείγματα (0 = κανονική BCE)
@@ -123,7 +158,7 @@ def focal_loss(gamma=2.0, alpha=0.75):
 # V3.1
 model = Sequential()
 # Η είσοδος παραμένει δυναμική και προσαρμόζεται αυτόματα στα 24 features.
-model.add(Input(shape = (X_train_scaled.shape[1],)))
+model.add(Input(shape = (X_train_resampled.shape[1],)))
 model.add(Dense(units = 128, use_bias = False))
 model.add(BatchNormalization())
 model.add(Activation('relu'))
@@ -160,22 +195,24 @@ tensorboard_callback = tf.keras.callbacks.TensorBoard(
     log_dir = log_dir, histogram_freq = 1
 )
 
-def train_model(model, X, y):
+def train_model(model, X, y, validation_data):
     print("\nΞεκινάει η εκπαίδευση...")
     history = model.fit(
         
         X, y,
         epochs=50,
         batch_size=256,
-        validation_split=0.1,
+        validation_data=validation_data,
         callbacks = [early_stopping, tensorboard_callback],
         verbose=1)
     
     model_dir = r'models/trained_models'
+    scaler_dir = r'models/scalers'
     os.makedirs(model_dir, exist_ok=True)
+    os.makedirs(scaler_dir, exist_ok=True)
     ts = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
     model_path = os.path.join(model_dir, f"trained_model{ts}.h5")
-    scaler_path = os.path.join(model_dir, f"scaler{ts}.pkl")
+    scaler_path = os.path.join(scaler_dir, f"scaler{ts}.pkl")
     print("\nΤο μοντέλο εκπαιδεύτηκε και αποθηκεύτηκε!")
     model.save(model_path)
     joblib.dump(scaler, scaler_path)
@@ -222,7 +259,12 @@ def find_best_threshold(y_true, y_prob, min_recall=0.20):
 
     return best
 
-history = train_model(model, X_train_scaled, y_train)
+history = train_model(
+    model,
+    X_train_resampled,
+    y_train_resampled,
+    validation_data=(X_validation_scaled, y_validation)
+)
 
 y_test_prob = model.predict(X_test_scaled, verbose=0).ravel()
 print("Min:", y_test_prob.min())
@@ -240,9 +282,10 @@ print(
 
 
 threshold_path = os.path.join(
-    r'models/trained_models',
+    r'models/thresholds',
     f"threshold{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.txt"
 )
+os.makedirs(os.path.dirname(threshold_path), exist_ok=True)
 with open(threshold_path, 'w') as _f:
     _f.write(str(best_threshold_stats['threshold']))
 print(f"Threshold αποθηκεύτηκε: {threshold_path}")
